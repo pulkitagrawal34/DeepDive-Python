@@ -190,7 +190,6 @@ f(10)
 f_ = select_func(2)(10)  #this will pass the value 10 to the return function(cube/aquare) depending upon the func_id
 
 
-
 #PYHTON OPTIMIZATIONS :Interning
 
 #forcing a string to intern
@@ -221,8 +220,8 @@ def compare_using_interning(n):
             pass
 
 
-compare_using_equals(10000000) # implemented in 3.49s
-compare_using_interning(10000000) #implemented in 0.42 sec
+# compare_using_equals(10000000) # implemented in 3.49s
+# compare_using_interning(10000000) #implemented in 0.42 sec
 
 
 #PYTHON OPTIMISATIONS
@@ -244,7 +243,7 @@ def search_element(e):
     if e in [1,2,3]: # python converts this list into tuple for faster processing. 
         pass         # similarly sets gets converted to --> frozenset
 
-print(search_element.__code__.co_consts)
+# print(search_element.__code__.co_consts)
 
 
 #set vs list/tuple membership
@@ -252,4 +251,64 @@ print(search_element.__code__.co_consts)
 import string 
 import time
 
-string.ascii_letters
+char_list = list(string.ascii_letters)
+char_tuple = tuple(string.ascii_letters)
+char_set = set(string.ascii_letters)
+
+def membershipTest(n, container):
+    for i in range(n):
+        if "z" in container:
+            pass
+
+# membershipTest(10000000, char_list) # 4.82 sec
+# membershipTest(10000000, char_tuple) # must be close to list timings
+# membershipTest(10000000, char_set) #0.84 sec
+
+
+#INTEGERS DATA TYPE
+
+#constructor and bases 
+
+a = int() #initialised with default value 0
+a = int(True) # returns 1 for True and 0 for False
+
+#we can also initialise it with a string and base 
+a = int("97") # default base is 10, if not specified
+a = int('1010', base = 2) # 1010 is base 2 representation of integer 10
+a = int("a", base= 16) #hexadecimal representation of 10
+
+#code to represent an integer from base 10 ---> base b 
+
+def from_base10(num, b:int):
+    if b < 2 or b >36:
+        raise ValueError("Base b must be 2 <= b <=36")
+
+    if num == 0:
+        return 0 
+
+    sign = -1 if num <0 else 1
+    num*= sign
+
+    mapping = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+    #key concept:
+    # numberator/denominator  = (numerator//denominator) * denominator + numerator%denominator
+
+    encoding = []
+
+    while num >  0 :
+        m = num % b
+        num = num // b
+        encoding.insert(0,m)
+
+    encoded =  "".join([mapping[i] for i in encoding])
+    
+    if sign == -1:
+        encoded = "-" + encoded
+
+    return encoded
+
+result = from_base10(3451,16)
+print(result)
+print(int(result, base= 16))
+
