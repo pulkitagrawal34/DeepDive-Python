@@ -308,7 +308,240 @@ def from_base10(num, b:int):
 
     return encoded
 
-result = from_base10(3451,16)
-print(result)
-print(int(result, base= 16))
+# result = from_base10(3451,16)
+# print(result)
+# print(int(result, base= 16))
 
+
+# RATIONAL NUMBERS
+
+from fractions import Fraction 
+import math 
+x = Fraction(3, 4)
+y = Fraction(6, 8)
+
+# print(x ==y) # return True because Fractions are automatically reduced Fraction(6,8) -- > fraction(3,4)
+# print(x.numerator)
+# print(x.denominator)
+
+""" 
+Constructor
+1. Fraction(numerator = 0, denominator = 1)
+2. Fraction(other_fraction)
+3. Fraction(float) #floats have finite level of precision
+4. Fraction(decimal) 
+5. Fraction(string)   # Fraction ('22/7') --> Fraction(22, 7)
+                        Fraction('10') --> Fraction(10, 1)
+                        Fraction("0.125) -- > Fraction(1, 8 )
+"""
+
+x = Fraction(math.pi) 
+# print(x) #would return 884279719003555/281474976710656 which is an approximation of the irrational number pi as internally irrational numbers are stored as float.
+
+
+y = Fraction(0.3)
+# print(y) # would return Fraction(5404319552844595, 18014398509481984) 
+
+#This happens because in reality python stores 0.3 as :
+format(0.3, '0.25f')  #returns 0.2999999999999999888977698
+
+"""In order  to avoid this we can limit the denominator
+This would force python to find a number which is closest to 0.2999999999999999888977698 and can be represented with the limiting denominator"""
+y.limit_denominator(10) # return Fraction(3, 10)
+x.limit_denominator(10) # return Fraction(22, 7)
+
+
+#Floats 
+
+#equality testing in float 
+
+x = 0.1
+format(x, '0.25f') # 0.1000000000000000055511151
+#this happens because not all floats can be represented exactly in binary representation
+
+#let, 
+x = 0.125 + 0.125 + 0.125
+y = 0.375
+x==y # returns True 
+
+#but, if :
+x = 0.1 + 0.1 + 0.1
+y = 0.3
+x==y  # returns False 
+
+#the way we can address this problem by definiting an absolute_tolerance "ε"such that |x - y| < ε
+#But the problem arises when numbers are too close to zero or too far from zero 
+#for example
+
+def equality_check(num1 , num2, absolute_tolerance):
+    return  math.fabs(num1- num2) < absolute_tolerance
+
+x = 0.01
+y = 0.02
+
+equality_check(x, y, 10e-17) # returns False 
+
+#but let's say, 
+x = 10000.01
+y = 10000.02
+
+#They are pretty close, but, 
+equality_check(x, y, 10e-17) # returns False 
+
+#Hence we need to use a relative tolerance instead of an absolute one but that too alone would not work in situations where the values of x and y are close to zero 
+#hence we combine them as follows:
+
+def equality_check2(num1, num2, relative_tolerance, absolute_tolerance):
+    tolerance = max(relative_tolerance * max(math.fabs(num1), math.fabs(num2)), absolute_tolerance)
+    return math.fabs(num1-num2) < tolerance
+
+#Python has an inbuilt method which does this eaxctly same thing for us : isclose()
+
+from math import isclose
+
+#isclose(a, b , rel_tol = 1e-9, abs_tol = 0.0)--> bool
+x = 0.1 + 0.1 + 0.1
+y = 0.3
+
+isclose(x, y) # returns True 
+x== y # returns False 
+
+x = 123456789.01
+y = 123456789.02
+isclose(x, y, rel_tol = 0.01)  # returns True, looks good. 
+
+#But, lets take another scenario 
+x = 0.0000001
+y = 0.0000002
+isclose(x, y, rel_tol = 0.01) #returns False 
+
+#So we need to adjust the values of abs_tol and rel_tol in a way such that it works for either scenario 
+
+x1 = 123456789.01
+y1 = 123456789.02
+
+x2 = 0.0000001
+y2 = 0.0000002
+
+isclose(x1, y1 , rel_tol = 0.01, abs_tol = 0.01) #returns True
+isclose(x2, y2 , rel_tol = 0.01, abs_tol = 0.01) #returns True
+
+#FLOATs ----> Integers 
+
+#Truncation ---> Takes away the decimal part 
+math.trunc(10.4) # returns 10
+math.trunc(-10.4)# returns -10 
+# or int(10.4), int(-10.4) would also  return 10, -10
+
+#Floor --> small integer <= number 
+math.floor(10.4) # returns 10
+math.floor(-10.4) # returns -11
+
+#ceiling -- > small integer >= number 
+math.ceil(10.4) #returns 11
+math.ceil(-10.4) #returns -10
+
+#Round   
+#round(x, n= 0) --> rounds a number x to the closest multiple of 10**(-n) 
+#for n = 0 , rounds to closest multiple of 10**(-0) i.e. 1 
+#for n = 1 , rounds to closest multiple of 10**(-1) i.e. 0.1 
+#for n = -1, rounds to closest multiple of 10**(-(-1)) i.e. 10
+
+round(10.6, 0) #returns 11.0
+round(18.5, -1)  # returns 20  
+round(888.88, -1) # return 890.0
+round(888.88, -2) # return 900.0
+round(888.88, -4) # return 0.0 
+
+#Rounding a tie Breaker
+round(1.25, 1) # returns 1.2 # round it to the nearest value with an EVEN least significant digit
+round(-1.25, 1) # returns -1.2 # round it to the nearest value with an EVEN least significant digit
+
+#for, 
+round(1.35, 1)  # returns 1.4 
+round(-1.35, 1)  #  returns -1.4
+
+#similarly
+round(1.5, 0)  # returns 2.0
+round(2.5, 0)  # returns 2.0 
+round(3.5, 0)  # returns 4.0 
+
+#incase we always want to round away from zero in case of a tie breaker 
+
+def round_up(x):
+    from math import copysign 
+    return int(x + 0.5* copysign(1, x))
+
+round_up(1.5)   # returns 2
+round_up(2.5)   # returns 3 
+round_up(3.5)   # returns 4 
+
+"""Decimals"""
+
+import decimal 
+from decimal import Decimal 
+
+"""
+Constructor 
+
+Integers  a = Decimal(10) 
+String    a = Decimal("0.1")
+Tuples    a = Decimal((1, (1, 2, 3), -2))
+Float     a = Decimal(0.1)  "BIG NO NO" because the decimal will store the actual 
+                            value of 0.1 which is 0.1000000000000000055511151231257827021181583404541015625
+"""
+
+# Working with Tuples constructor
+# 1.23 = +123 * 10**-2  --> (sign, (d1, d2, d3), exp)  --> s = 0 if x>=1 else 1
+
+a = Decimal((1, (1, 2, 3), -2))   # return -1.23
+a = Decimal((0, (1, 2, 3), -2))   # return  1.23
+
+#context precision and the constructor 
+
+a = Decimal('0.12345')
+b = Decimal('0.12435')
+
+c = a+b # returns 0.24780
+
+with decimal.localcontext() as ctx:
+    ctx.prec = 2 #setting this to 2 would not affect storange but it will affect the arithmetic expression 
+    c = a + b  #returns 0.25
+
+
+c = a + b # back to 0.24780
+
+#mathematic operations 
+
+# 1. // and % operators in decimal are slightly different but It still satisfy n = d* (n // d) + n % d 
+
+x = 10 
+y = 3 
+x//y  # returns 3 
+x % y  # returns 1 
+divmod(x, y) # returns (3, 1)
+(x == y* (x // y) + x % y) # returns True 
+
+x = Decimal(10)
+y = Decimal(3) 
+x//y  # returns 3 
+x % y  # returns 1 
+divmod(x, y) # returns (3, 1)
+(x == y* (x // y) + x % y) # returns True 
+
+x = Decimal(-10)
+y = Decimal(3) 
+x//y  # returns -3  #here trunc(x//y) happens instead of math.floor(x//y) like in the case of integers 
+x % y  # returns -1 
+c, d  = divmod(x, y) # returns (3, 1)
+(x == y* (x // y) + x % y) # returns True 
+
+#logarithmic, exponent and square root is implemented differntly by Decimal as compared to math
+
+a = Decimal('1.5')
+a.ln()
+a.exp()
+a.sqrt()
+
+#Note: If we use math module, it first converts the Decimal type to float and then performs the mathematical operation. 
+math.sqrt(a) == a.sqrt() # return False 
