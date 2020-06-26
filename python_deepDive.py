@@ -490,7 +490,6 @@ Tuples    a = Decimal((1, (1, 2, 3), -2))
 Float     a = Decimal(0.1)  "BIG NO NO" because the decimal will store the actual 
                             value of 0.1 which is 0.1000000000000000055511151231257827021181583404541015625
 """
-
 # Working with Tuples constructor
 # 1.23 = +123 * 10**-2  --> (sign, (d1, d2, d3), exp)  --> s = 0 if x>=1 else 1
 
@@ -507,7 +506,6 @@ c = a+b # returns 0.24780
 with decimal.localcontext() as ctx:
     ctx.prec = 2 #setting this to 2 would not affect storange but it will affect the arithmetic expression 
     c = a + b  #returns 0.25
-
 
 c = a + b # back to 0.24780
 
@@ -545,3 +543,57 @@ a.sqrt()
 
 #Note: If we use math module, it first converts the Decimal type to float and then performs the mathematical operation. 
 math.sqrt(a) == a.sqrt() # return False 
+
+#BOOLEANS -- >they are integer subclass  True --> 1,  False -->0, However they don't share the memory address
+
+issubclass(bool, int) # returns True
+isinstance(True, bool) # returns True 
+isinstance(True, int) # returns True
+
+int(True) # returns 1
+int(False) #returns 0 
+
+True is 1 # returns False 
+True == 1 # returns True 
+
+# we can implement arithmetic operations on bool just like integers
+True + True # returns 2 
+
+#All objects in python have an associated Truth value
+
+#example for Integers 
+def __bool__(self):
+    return self!=0 
+
+#bool(x) ---> calls x.__bool__() method and returns True or False 
+
+a = bool(Fraction(0, 1)) #returns False because 0/1  ==0
+b = bool(Decimal('0.0')) #returns False
+c = dict()
+d = set()
+bool(c) #returns False because they are empty 
+bool(d) #returns False because they are empty 
+
+#Note: bool returns False if value ==0  or len(object) == 0 
+
+#real time use case 
+
+my_list = [1,2,3]
+
+if my_list is not None and len(my_list) > 0 :
+    pass
+
+# the above code can be re-written as 
+if my_list:   #python is esentially looking at bool(my_list)
+    pass
+
+a = 0 
+total = 10 
+x = a and total/a
+print(x) 
+
+'''
+Definition of "or" and "and" in python / concept of shot-circuiting
+X or Y : If X is truthy, return X, otheriwise evaluate y and return it.  
+X and Y: if X is falsy, return X, otherwise evaluate Y and return it. 
+'''
