@@ -1,3 +1,11 @@
+'''
+Content Covered in this module:
+1. Quick refresh of basics of Python 
+1. Python variable and Memory reference 
+2. Numeric Data Types 
+'''
+
+
 # #try ...except...finally
 
 # a = 0
@@ -590,10 +598,24 @@ if my_list:   #python is esentially looking at bool(my_list)
 a = 0 
 total = 10 
 x = a and total/a
-print(x) 
+x # returns 0
 
 '''
 Definition of "or" and "and" in python / concept of shot-circuiting
 X or Y : If X is truthy, return X, otheriwise evaluate y and return it.  
 X and Y: if X is falsy, return X, otherwise evaluate Y and return it. 
 '''
+
+"a" or [1,2]  #returns "a"
+""  or [1,2]  # returns [1,2]
+
+1 or 1/10 # returns 1
+#0 or 1/0 # returns ZeroDivisionError
+
+s1 = None
+s2 = ""
+s3 = "abc"
+
+#if we don't want None or an empty string
+s4 = s1 or s2 or s3
+# print(s4) returns "abc"
