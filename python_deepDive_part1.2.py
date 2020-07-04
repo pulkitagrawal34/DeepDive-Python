@@ -11,7 +11,7 @@ def myfunc(a, b , c):
 
 myfunc(1,2,3) # returns a = 1, b = 2, c = 3
 
-def my_func(a, b= 2 , c= 3):
+def my_func(a, b= 2 , c= 3): #Once you start assigning default values, you must assign it for all the functions' parameters after that.
     return "a = {0}, b = {1}, c = {2}".format(a,b,c)
 
 my_func(10) # returns a = 10, b = 2, c = 3, since we have defined a deafault valuesfor b and c , the arguments are optional.
@@ -170,10 +170,61 @@ arguments = [10, 20, 30, 40, 50]
 result = avg(*arguments)  # returns 30.0
 
 #or, lets sa y you have a function
-
 def func2(a, b , c, *args):
     return a, b , c , args
 
 result = func2(*arguments)  # returns 10, 20, 30, (40, 50)
 
 """Keyword arguments"""
+
+def func3(a, b , *args, d): # Though *args exhausts all positonal arguments,  we can pass arguments here is by providing named arguments
+    return a, b , args, d
+
+result = func3(1, 2, "x", "y", d = 100) 
+result = func3(1, 2, d= 100)  # returns 1,2, (), 100
+#Note:
+#result = func3(1,2)  # this will throw an error--> "func3() missing 1 required keyword-only argument: 'd'"
+
+def func4(*args, d):
+    pass
+    
+result = func4(1,2,3, d = 100) #args = (1,2,3), d = 100
+result = func4(d = 100)  # args = (), d = 100
+print(result)
+
+def func5(a, b=20, *argv, d = 0, e): 
+    return a, b, argv, d, e
+'''
+Note: In general,Once you start passing a default value parameter in a function, you have to pass a default value for all the other parameters coming after it
+for example:
+    def func(a, b = 2, c= 3):
+        pass 
+ Here I have to pass to a default value to c. 
+
+ But In case we are passing *argv after a default valaue parameters such as b =20, you need not pass a default value parameter, because it is compulsory to 
+ pass a keyword only arguments for parameters after *argv during a fucntion call . 
+'''
+
+# result = func5(5, 4 ,3, 2, 1)  --> This will throw an error because e is undefined and also has no default value.
+result = func5(5, 4 ,3, 2, 1, e = "all engines running")  # returns 5, 4, (3, 2, 1), 0, 'all engines running'
+result = func5(0, 600, d = "good morning", e = "python")  # returns 0, 600, (), 'good morning', 'python'
+
+''' **kwargs : short for "variable key word argument" '''
+
+
+def func(**kwrgs):
+    return kwrgs
+
+result = func(a = 1, b = 2, c = 3)  # returns {'a': 1, 'b': 2, 'c': 3}
+
+#you can also define, 
+def func(*args, **kwrgs):
+    return args, kwrgs
+
+result = func(1, 2, a = 100, b = 200)  # returns (1, 2), {'a': 10, 'b': 20}
+
+
+print(result)
+
+
+
