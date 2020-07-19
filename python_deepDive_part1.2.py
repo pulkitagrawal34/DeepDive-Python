@@ -190,7 +190,7 @@ def func4(*args, d):
     
 result = func4(1,2,3, d = 100) #args = (1,2,3), d = 100
 result = func4(d = 100)  # args = (), d = 100
-print(result)
+# print(result)
 
 def func5(a, b=20, *argv, d = 0, e): 
     return a, b, argv, d, e
@@ -218,13 +218,87 @@ def func(**kwrgs):
 result = func(a = 1, b = 2, c = 3)  # returns {'a': 1, 'b': 2, 'c': 3}
 
 #you can also define, 
-def func(*args, **kwrgs):
+def func(*args, **kwrgs): 
     return args, kwrgs
 
 result = func(1, 2, a = 100, b = 200)  # returns (1, 2), {'a': 10, 'b': 20}
 
+"""Building a Functional Timer"""
 
-print(result)
+import time 
+
+def time_it(fn, *args, rep = 1,  **kwargs):
+    start = time.time()
+    for i in range(rep):
+        fn(*args, **kwargs) # unrapping it before passing it through function
+
+    return (time.time()-start)/rep
+
+# time_it(print, 1, 2, 3, sep= ' - ', end = " *** \n", rep = 5)
 
 
+"""Default values, beware!!!!"""
+
+from datetime import datetime
+
+def log(msg, dt = datetime.utcnow()):
+    return "{0}, {1}".format(dt, msg)
+
+log("message 1") # return 2020-07-19 15:06:22.1306979, message 1
+# time.sleep(1)
+log("message 2") # returns 2020-07-19 15:06:22.130697, message 2
+
+#Notice that here we got the same datetime value returned because when we ran this module, a default value got assigned to keyword parameter-->"dt" in log function 
+#and if the keyword argumnet is not provided while calling the function, it will return the deafult value assigned at the time of creation, so it will never change
+#until manually specified, the hence In order to avoid situations like this: 
+
+def log(msg, dt = None):
+    dt = dt or datetime.utcnow()
+    return "{0}, {1}".format(dt, msg)
+
+log("message 1") # return 2020-07-19 15:07:00.601411, message 1
+# time.sleep(1)
+log("message 2") # return 2020-07-19 15:07:01.602570, message 2
+
+"""Docstrings and Annotations: Meta data attahced to the functions"""
+
+def myfunc(a, b=1):
+    """ 
+    returns a * b   
+
+    Additonal Documents:
+
+    Inputs :
+
+    Outputs: 
+    """
+    return a *b
+
+#docstrings must be the first line of code in order to be part of the documentation
+
+myfunc.__doc__
+
+def my_func(a:"annotation for a", b:"annotation for b" = 1) -> "something":
+    """ Documentation for my function """
+    return a * b
+
+my_func.__doc__ #returns  Documentation for my function
+my_func.__annotations__  # returns {'a': 'annotation for a', 'b': 'annotation for b', 'return': 'something'}
+
+
+x = 10 
+y = 5
+
+def myfunc(a: "some character", 
+           b: "maximum between x and y" = max(x, y)) -> "returns a repeated " + str(max(x, y)) + " times":
+    return a * max(x, y )
+
+myfunc("a") # returns aaaaaaaaaa i.e. "a" 10 times 
+myfunc.__annotations__ # returns {'a': 'some character', 'b': 'maximum between x and y', 'return': 'returns a repeated 10 times'}
+
+#Notice that if we now change the value of x to 20, the annotations still remain the same, but they were assigned when the function was created. 
+x = 20 
+
+myfunc("a") # returns aaaaaaaaaaaaaaaaaaaa i.e. "a" 20 times 
+myfunc.__annotations__ # returns {'a': 'some character', 'b': 'maximum between x and y', 'return': 'returns a repeated 10 times'}
 
