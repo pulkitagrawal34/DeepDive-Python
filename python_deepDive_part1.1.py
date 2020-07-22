@@ -1,10 +1,10 @@
+# python --version : 3.7.3
 '''
 Content Covered in this module:
 1. Quick refresh of basics of Python 
 1. Python variable and Memory reference 
 2. Numeric Data Types 
 '''
-
 
 # #try ...except...finally
 
