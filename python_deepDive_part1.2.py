@@ -89,13 +89,12 @@ c # returns "n"
 #or, if we want first two and the last element. 
 s = "python"
 a , b , *c , d = s #
-
 #Note: Be careful while using this with sets, as their is no positional ordering 
 
 """
 using * expression on RHS
 """
-l1 = [1,2, 3]
+l1 = [1, 2, 3]
 l2 = [4, 5, 6]
 l = [*l1, *l2]   # retruns [1, 2, 3, 4, 5, 6]
 
@@ -130,7 +129,7 @@ d4 = {**d2, **d1} # returns {'key2': 2, 'key4': 4, 'key1': 1}
 # Note: Here since a dictionary has unique keys, the dictionary added later will be given a preference. 
 
 """Nested Unpacking """
-a, b, e = [1, 2, "xy"]  # returns a=1, b = 2, c = "xy"
+a, b, e = [1, 2, "xy"]  # returns a=1, b = 2, e = "xy"
 c, d = e # returns c= "x", d = "y"
 
 #Instead we can use a nested unpacking 
@@ -246,11 +245,11 @@ def log(msg, dt = datetime.utcnow()):
 
 log("message 1") # return 2020-07-19 15:06:22.1306979, message 1
 # time.sleep(1)
-log("message 2") # returns 2020-07-19 15:06:22.130697, message 2
+log("message 2") # returns 2020-07-19 15:06:22.1306979, message 2
 
-#Notice that here we got the same datetime value returned because when we ran this module, a default value got assigned to keyword parameter-->"dt" in log function 
-#and if the keyword argumnet is not provided while calling the function, it will return the deafult value assigned at the time of creation, so it will never change
-#until manually specified, the hence In order to avoid situations like this: 
+"""Notice that here we got the same datetime value returned because when we ran this module, a default value got assigned to keyword parameter-->"dt" in log function 
+and if the keyword argumnet is not provided while calling the function, it will return the deafult value assigned at the time of creation, so it will never change
+until manually specified, the hence In order to avoid situations like this: """
 
 def log(msg, dt = None):
     dt = dt or datetime.utcnow()
@@ -260,7 +259,7 @@ log("message 1") # return 2020-07-19 15:07:00.601411, message 1
 # time.sleep(1)
 log("message 2") # return 2020-07-19 15:07:01.602570, message 2
 
-"""Docstrings and Annotations: Meta data attahced to the functions"""
+"""Docstrings and Annotations: Meta data attached to the functions"""
 
 def myfunc(a, b=1):
     """ 
@@ -300,5 +299,210 @@ myfunc.__annotations__ # returns {'a': 'some character', 'b': 'maximum between x
 x = 20 
 
 myfunc("a") # returns aaaaaaaaaaaaaaaaaaaa i.e. "a" 20 times 
-myfunc.__annotations__ # returns {'a': 'some character', 'b': 'maximum between x and y', 'return': 'returns a repeated 10 times'}
+myfunc.__annotations__ # returns {'a': 'some character', 'b': 'maximum between x and y', 'return': 'returns a repeated 10 times'} 
 
+"""Lambda Expressions and Sorting(als called highe rorder function because it can take a function as an argumentx) """
+
+l = ["c", "B", "D", "a"]
+
+sorted(l) # return ["B", "D", "a", "c"] because the ascii value of "B" is smaller than "a"
+
+#here we can use lambda expression to avoid this
+sorted(l, key = lambda x: x.upper(), reverse = False) # return ['a', 'B', 'c', 'D']
+""" The sorted function sorts the output of the lambda function"""
+
+mydict = {"a" : 97, 
+          "b": 200, 
+          "c": 36}
+
+sorted(mydict.items(), key = lambda x: x[1], reverse = True) #returns [('b', 200), ('a', 97), ('c', 36)]
+
+sorted(mydict, key = lambda x: mydict[x], reverse = True) # returns ['b', 'a', 'c']
+
+#we can pass any function to the "key" paramter in sorted function. 
+def dist_sq(x):
+    return (x.real)**2 + (x.imag)**2
+
+l = [3+3j, 1-1j, 3+0j]
+sorted(l, key = dist_sq, reverse = False) # returns [(1-1j), (3+0j), (3+3j)]
+sorted(l, key =lambda x: (x.real)**2 + (x.imag)**2, reverse = False) # returns [(1-1j), (3+0j), (3+3j)]
+
+"""Map and Filters  : They are higher order functions
+
+Map( func, *iterables) : returns an iterator, we can either pass it through a list or run a for loop to produce results. 
+
+Filter(func, iterable)--> will return a iterator that contain all the elements of the iterable for which the function called on it is Truthy.
+If the function is None, it simply returns the elements of the iterables that are Truthy.
+
+"""
+mylist = [2,3,4]
+
+def sq(x):
+    return x**2
+
+list(map(sq, mylist))  # returns [4, 9, 16]
+list(map(lambda x: x**2, mylist))  # returns [4, 9, 16]
+
+mylist1 = [1,2,3]
+mylist2 = [10,20,30]
+
+def add(x, y):
+    return x + y 
+
+a = list(map(add, mylist1, mylist2))  # returns [11, 22, 33]
+a = list(map(lambda x, y : x + y , mylist1, mylist2))  # (using lambda function) returns [11, 22, 33]
+
+#filters 
+
+mylist = [0,1,2,3,4,5]
+
+a = list(filter(None, mylist)) # returns [1, 2, 3, 4, 5]
+a = list(filter(None, [1, 0, 4, "a", "", None, True, False])) # returns [1, 4, 'a', True]
+
+def is_even(x):
+    return x %2 ==0
+
+a = list(filter(is_even, mylist)) # returns [0, 2, 4]
+a = list(filter(lambda x: x % 2== 0, mylist))  # (using lambda function) returns [0, 2, 4]
+
+""" Reducing Functions"""
+
+_max = lambda x, y : x if x > y else y
+
+def max_sequence(sequence):
+    result = sequence[0]
+    for i in sequence[1:]:
+        result = _max(result, i )
+
+    return result 
+
+_min = lambda x, y : x if x < y else y
+
+def min_sequence(sequence):
+    result = sequence[0]
+    for i in sequence[1:]:
+        result = _min(result, i )
+
+    return result 
+
+_add = lambda x, y : x+y 
+
+def add_sequence(sequence):
+    result = sequence[0]
+    for i in sequence[1:]:
+        result = _add(result, i )
+
+    return result 
+
+mylist = [5, 3, 6, 10, 9]
+
+a = max_sequence(mylist) # returns 10
+a = min_sequence(mylist) # returns 3
+a = add_sequence(mylist) # returns 33
+
+#We can clearly see that all the above functions only have a slight difference, henvce we can write a generic _reduce function as:
+def _reduce(fn, sequence):
+    result = sequence[0]
+    for x in sequence[1:]:
+        result = fn(result, x)
+    return result 
+
+a = _reduce( lambda x, y: x+y , mylist) # returns 33
+a = _reduce( _add, mylist) # returns 33
+
+a1 = _reduce( lambda x, y: x if x > y else y , mylist) # returns 10
+a1 = _reduce( _max, mylist) # returns 10
+
+a2 = _reduce( lambda x, y: x if x < y else y , mylist) # returns 3
+a2 = _reduce( _min , mylist) # returns 3
+
+"""python has an inbuild reduce function which can be imported as following:
+            from functools import reduce 
+
+        reduce(funciton, iterable, initializer)
+
+This reduce function works with any kind of iterables(list, set, string etc)
+"""
+from functools import reduce 
+
+a = reduce(_max, mylist) # returns 10 
+a = reduce(_add, {1, 2, 3, 4, 5 , 6}) # returns 10
+a = reduce(lambda x, y: x * y, mylist) # returns 8100
+#Can be used to calculate factorial of a number. 
+a = reduce(lambda x, y: x * y, list(range(1, 5+1))) # returns 120 
+
+s = [True, 1, 0 , None]
+s1 = {False, "", 0, None}
+
+a = any(s) # returns True  --> returns True if any value is Truthy
+a = any(s1) # returns False
+
+a = all(s) # returns False --> returns True if all the values are Truthy 
+a = all(s1) # returns Flase
+
+#we can write these reducing functions ourselves 
+
+a = reduce(lambda x, y : bool(x) or bool(y), {True, 1, 0, None}) # returns True 
+a = reduce(lambda x, y : bool(x) or bool(y), {False, "", 0, None}) # returns False 
+
+a = reduce(lambda x, y : bool(x) and bool(y), {True, 1, 0, None}) # returns False
+a = reduce(lambda x, y : bool(x) and bool(y), {False, "", 0, None}) # returns False 
+
+#Use of Initialiser keyword argument in reduce function
+
+mylist = [1,2,3,4]
+a = reduce(lambda x, y : x + y, mylist, 100) # returns 110
+
+#we can do this in our defined _reduce function as well
+def _reduce(fn, sequence, initial_value = 0):
+    result = initial_value
+    for x in sequence:
+        result = fn(result, x)
+    return result 
+
+a = _reduce(lambda x, y : x + y, mylist, 199 ) # returns 209
+
+#since we are using an initialiser, we can now use any iterables here
+
+myset = {1,2,3,4}
+a = _reduce(lambda x, y : x + y, myset, 199 ) #returns 209
+
+"""Using partial functions: used to reduce the number of argumnets required to call the function"""
+from functools import partial 
+
+def pow(number, exponent):
+    return number**exponent 
+
+square = partial(pow, exponent= 2 )
+cube = partial(pow, exponent = 3 )
+
+a = square(2) # returns 4 
+a = cube(3) # returns 27
+
+## BEWARE!!
+a = cube(2, exponent = 10) # returns 1024
+
+#we can write this partial function by ourself as well, like this:
+
+def square(number):
+    return pow(number, 2)
+
+def cube(number):
+    return pow(number, 3)
+
+a = square(16) # returns 100
+a = cube(5) # returns 125
+
+#Application 1
+#using distance from origin metric to sort a list 
+
+origin = (0,0)
+
+mylist = [(1,1), (0,2), (-3, 2), (0,0), (10, 10)]
+
+dist2 = lambda a, b: (a[0] - b[0])**2 + (a[1] - b[1])**2 
+
+a = dist2((1,1), origin) # returns 2
+
+a = sorted(mylist, key= partial(dist2, b = origin), reverse = True ) # returns [(10, 10), (-3, 2), (0, 2), (1, 1), (0, 0)]
+a = sorted(mylist, key = lambda x: dist2(x, origin), reverse = True) # returns [(10, 10), (-3, 2), (0, 2), (1, 1), (0, 0)]
