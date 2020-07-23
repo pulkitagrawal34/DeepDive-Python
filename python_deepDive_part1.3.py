@@ -465,7 +465,6 @@ def Counter(fn):
 
         #keeping of track of how many times a function has been called using a global variable 
         func_counters[fn.__name__] = count
-
         return fn(*args, **kwargs)
     
     return inner
@@ -488,6 +487,614 @@ result = counter_mult(30,40) #returns 1200
 result = counter_mult(10,20) #returns 200
 
 func_counters # returns {'add': 2, 'mult': 2}
+
+"""Decorators"""
+func_counters = {}
+
+def Counter(fn):
+    count = 0
+
+    def inner(*args, **kwargs):
+        nonlocal count
+        count+=1
+        
+        func_counters[fn.__name__] = count
+        return fn(*args, **kwargs)
+    
+    return inner
+
+def add(a: int, b:int= 0)-> int:
+    """
+    adds two values 
+    """
+    return a+b 
+
+add.__doc__ #returns  "adds two values"
+add.__annotations__ #returns {'a': <class 'int'>, 'b': <class 'int'>, 'return': <class 'int'>}
+
+id(add) # return 2162418271504 
+add = Counter(add)
+id(add) # 2162418272184
+
+result = add(10, 20) # returns 30
+func_counters# returns {'add': 1}
+
+"""
+we can see that the id of add has changed, i.e they are not the same function but can still perform the addition. 
+help(add) -->returns inner(*args, **kwargs), which means that we have lost the original annotations and docstrings of the function add, In order to take care of this 
+python provides a wrap fucntion which we can import from functools. 
+Also, there is an alternate way to add a decorator to the function i.e using a "@" symbol
+for example: 
+"""
+
+@Counter
+def mult(a: int, b:int= 1)-> int:
+    """
+    multiply two values 
+    """
+    return a*b 
+
+result = mult(3,4) # returns 12
+
+func_counters # return {'add': 1, 'mult': 1}
+
+#The annotation and doctring problem can be solved in multiple way: Method 1
+
+func_counters = {}
+
+def Counter(fn):
+    count = 0
+
+    def inner(*args, **kwargs):
+        nonlocal count
+        count+=1
+        
+        func_counters[fn.__name__] = count
+        return fn(*args, **kwargs)
+    
+    inner.__name__ = fn.__name__
+    inner.__doc__ = fn.__doc__
+    inner.__annotations__ = fn.__annotations__
+    return inner
+
+def mult(a: int, b:int= 1)-> int:
+    """
+    multiply two values 
+    """
+    return a*b 
+
+mult = Counter(mult)
+
+mult.__doc__   #returns  multiply two values
+mult.__name__   #returns  mukt
+mult.__annotations__   #returns  {'a': <class 'int'>, 'b': <class 'int'>, 'return': <class 'int'>}
+
+#Method 2 
+from functools import wraps 
+
+func_counters = {}
+
+def Counter(fn):
+    count = 0
+
+    def inner(*args, **kwargs):
+        nonlocal count
+        count+=1
+        
+        func_counters[fn.__name__] = count
+        return fn(*args, **kwargs)
+    
+    wraps(fn)(inner) # takes the original function to decorate the inner function
+    return inner
+
+def mult(a: int, b:int, c:int= 1)-> int:
+    """
+    multiply three values 
+    """
+    return a*b*c
+
+mult = Counter(mult)
+
+"""
+help(mult)  ---> mult(a: int, b: int, c: int = 1) -> int
+                     multiply three values
+""" 
+
+#Applications of Timer 
+
+def timed(fn):
+    import time 
+    from functools import wraps
+
+    @wraps(fn) # this is a parameterised wrapper i.e the output of the decorator is a function
+    def inner(*args, **kwargs):
+        elapsed_total = 0 
+        elapsed_count = 0 
+
+        for i in range(10):
+            start = time.time()
+            result = fn(*args, **kwargs)
+            end = time.time()
+            elapsed = end - start
+
+            elapsed_total +=elapsed 
+            elapsed_count +=1
+
+        args_ = [str(a) for a in args]
+        kwargs_ = ["{0}={1}".format(k, v) for k, v in kwargs.items()]
+        all_args = ",".join(args_ + kwargs_)
+
+        print("{0}({1}) took an average {2:.6f}s to run".format(fn.__name__, 
+                                                    all_args, 
+                                                    elapsed_total/elapsed_count))
+        return result
+
+    return inner 
+
+@timed
+def recursive_fibb(n, memoised = {}):
+    if n <= 2:
+        return 1 
+    else:
+        return recursive_fibb(n-1) + recursive_fibb(n-2)
+
+
+@timed
+def looped_fibb(n):
+    if n <= 2:
+        return 1 
+    
+    i = 1
+    j = 1
+    for k in range(3, n+1):
+        i, j = j, i + j 
+
+    return j
+
+from functools import reduce 
+
+@timed 
+def fib_reduce(n):
+    initial = (1,1)
+    fib_n = reduce(lambda prev, n: (prev[0]+ prev[1], prev[0]), range(3,n+1), initial)  
+    return fib_n[0]
+
+# commented because decorator has a print function
+
+# recursive_fibb(3)
+# looped_fibb(10000)
+# fib_reduce(10000)
+
+#Application 2 of Decorators 
+
+def logged(fn):
+    from functools import wraps
+    from datetime import datetime, timezone
+    @wraps(fn)
+    def inner(*args, **kwargs):
+        run_dt = datetime.now(timezone.utc)
+        result = fn(*args, **kwargs)
+        print("{0}: called {1}".format(run_dt, fn.__name__))
+        
+        return result
+    
+    return inner
+
+@logged
+def func1():
+    pass 
+
+@logged
+def func2():
+    pass 
+
+# we can pass multiple decorators, but the order in which we pass will affect the result. 
+@logged
+@timed
+def fact(n):
+    from functools import reduce 
+    return reduce(lambda x, y : x*y, range(1, n+1))
+
+# fact(5)
+# func1()
+# func2()
+
+
+#Using Memoisation for recursion to reduce the timings 
+class Fibb:
+
+    def __init__(self):
+        self.cache = dict({1:1, 2:1})
+
+    def fib_class(self, n ):
+        if n not in self.cache:
+            # print("calculating fibb {0}".format(n))
+            self.cache[n] = self.fib_class(n-1) + self.fib_class(n-2)
+
+        return self.cache[n]
+
+def fib_closure():
+    cache = dict({1: 1, 2: 1})
+    def calc_fib(n):
+        if n not in cache:
+            # print("calculating fibb {0}".format(n))
+            cache[n] = calc_fib(n-1) + calc_fib(n-2)
+        return cache[n]
+
+    return calc_fib
+
+#using closure 
+f = fib_closure()
+f(7)
+
+#using class 
+f = Fibb()
+f.fib_class(7)
+
+#using decorator to do the caching 
+def memoize(fn):
+    cache = dict()
+
+    def inner(n):
+        if n not in cache:
+            cache[n] = fn(n)
+        return cache[n]
+    return inner
+
+@memoize
+def fibb_recursion(n):
+    # print("calculating fibb {0}".format(n))
+    return 1 if n < 3 else fibb_recursion(n-1) + fibb_recursion(n-2)
+
+fibb_recursion(10)
+fibb_recursion(12)
+
+#The memoize function is a very generic one, we can use it for anything 
+@memoize
+def fact(n):
+    # print("calculating fact {0}!".format(n))
+    return 1 if n < 2 else n * fact(n-1)
+
+fact(10)
+fact(11)
+
+#python has an inbuilt caching mechanism 
+from functools import lru_cache #lru stands for "least recently used"-> i.e least used are tosssed out of cache memory  
+
+@lru_cache(maxsize = 8) #this is a parameterised decorator, for instance: you can set the maximum cache size 
+def fib(n):
+    # print("calculating fib {0}".format(n))
+    return 1 if n < 3 else fib(n-1) + fib(n-2)
+
+fib(10) # returns 55
+
+"""Parameterised Decorators"""
+
+def dec_factory():
+
+    def dec(fn):
+        # print("Decorator running")
+
+        def inner(*args, **kwargs):
+            print("inner running")
+            return fn(*args, **kwargs)
+
+        return inner
+
+    return dec 
+
+@dec_factory() # same as, my_func = dec_factory()(my_func) 
+def my_func():
+    print("my_func running")
+
+
+# my_func()
+
+#let's add paprmeter to the decorator_factory
+def dec_factory(a, b):
+
+    def dec(fn):
+        # print("Decorator running")
+
+        def inner(*args, **kwargs):
+            print("inner running")
+            print("a= {}, b={}".format(a, b))
+            return fn(*args, **kwargs)
+
+        return inner
+
+    return dec 
+
+@dec_factory(10, 20) # same as, my_func = dec_factory(10, 20)(my_func)
+def my_func():
+    print("my_func running")
+
+# my_func()
+
+"""
+when we write add a decorator using the @ symbol on top of a function as follows: :
+@timed
+def fact(n):
+    from functools import reduce 
+    return reduce(lambda x, y : x*y, range(1, n+1))
+
+this is equivalent to writing--> fact = timed(fact)
+
+so now in below parameterised version, which is also known as decorator factory :
+
+@timed(23)
+def fact(n):
+    from functools import reduce 
+    return reduce(lambda x, y : x*y, range(1, n+1))
+
+This is same as this:--> fact = timed(23)(fact) i.e. the output of timed(23) is a decorator which takes fn as an input. 
+"""
+
+#let's modify the timed function now, the number of reps would be a parameter in this case, and it will return a decorator which will take fn as an input. 
+def timed(reps):
+
+    def dec(fn):
+        import time 
+        from functools import wraps
+
+        @wraps(fn) 
+        def inner(*args, **kwargs):
+            elapsed_total = 0 
+            elapsed_count = 0 
+
+            for i in range(reps):
+                start = time.time()
+                result = fn(*args, **kwargs)
+                end = time.time()
+                elapsed = end - start
+
+                elapsed_total +=elapsed 
+                elapsed_count +=1
+
+            args_ = [str(a) for a in args]
+            kwargs_ = ["{0}={1}".format(k, v) for k, v in kwargs.items()]
+            all_args = ",".join(args_ + kwargs_)
+
+            print("{0}({1}) took an average {2:.6f}s to run {3} times ".format(fn.__name__, 
+                                                        all_args, 
+                                                        elapsed_total/elapsed_count, reps))
+            return result
+
+        return inner 
+    return dec 
+
+@timed(23)
+def fact(n):
+    from functools import reduce 
+    return reduce(lambda x, y : x*y, range(1, n+1))
+
+# fact(5) #returns fact(5) took an average 0.000000s to run 23 times
+
+"""Decorator Classes"""
+class Myclass:
+    def __init__(self, a, b):
+        self.a = a 
+        self.b = b 
+
+    def __call__(self, fn):
+        def inner(*args, **kwargs):
+            print("decorated {} with a = {}, b = {}".format(fn.__name__, self.a, self.b))                                             
+            return fn(*args, **kwargs)
+
+        return inner 
+
+@Myclass(30,40)
+def my_func(s):
+    print("Hello {}".format(s))
+
+# my_func("world")
+
+"""Decorating Classes"""
+from datetime import datetime, timezone
+
+def info(obj):
+    result = []
+    result.append("Time: {}".format(datetime.now(timezone.utc)))
+    result.append("Class: {}".format(obj.__class__.__name__))
+    result.append("Id: {}".format(hex(id(obj))))
+
+    for k, v in vars(obj).items():
+        result.append("{0}: {1}".format(k, v))
+
+    return result
+
+def debug_info(cls):
+    cls.debug = info 
+    return cls
+
+@debug_info
+class Person:
+
+    def __init__(self, name, age):
+        self.name = name 
+        self.age = age 
+
+    def hi(self):
+        return "Hello world"
+
+p = Person("Pulkit", 23)
+p.debug() # returns ['Time: 2020-07-23 16:09:11.418853+00:00', 'Class: Person', 'Id: 0x11637ebbe10', 'name: Pulkit', 'age: 23']
+
+@debug_info
+class Automobile:
+
+    def __init__(self, make, model, year, top_speed):
+        self.make = make
+        self.model = model
+        self.year = year
+        self.top_speed = top_speed
+        self._speed = 0
+    
+    @property
+    def speed(self):
+        return self._speed
+
+    @speed.setter
+    def speed(self, new_speed):
+        if new_speed > self.top_speed:
+            raise ValueError("Speed cannot exceed top speed")
+        else:
+            self._speed = new_speed
+
+
+favourite = Automobile("Hyundai", "Creta", 2020, 180)
+result = favourite.debug() # returns ['Time: 2020-07-23 16:16:07.557669+00:00', 'Class: Automobile', 'Id: 0x2412ad9b0b8', 'make: Hyundai', 'model: Creta', 'year: 2020', 'top_speed: 180', '_speed: 0']
+
+favourite.speed = 100
+result = favourite.debug() # returns ['Time: 2020-07-23 16:17:12.515880+00:00', 'Class: Automobile', 'Id: 0x1add07fb0b8', 'make: Hyundai', 'model: Creta', 'year: 2020', 'top_speed: 180', '_speed: 100']
+
+import math 
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y 
+
+    def __abs__(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2)
+
+    def __repr__(self):
+        return "Point({}, {})".format(self.x , self.y)
+
+
+p1, p2, p3 = Point(2,3), Point(2,3), Point(0,0)
+
+result = abs(p1) # return 3.605551275463989
+result = p1 # return Point(2, 3)
+
+p1==p2 # return False
+"""This happens because Python doesn't know how to compare p1 and p2, hence it defaults to comparing memory addresses whoch are differnt"""
+
+#adding __eq__ method
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y 
+
+    def __abs__(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2)
+
+    def __repr__(self):
+        return "Point({}, {})".format(self.x , self.y)
+
+    def __eq__(self, other):
+        if isinstance(other, Point):
+            return self.x ==other.x and self.y == other.y
+        else:
+            return False
+
+    def __lt__(self, other):
+        if isinstance(other, Point):
+            return abs(self) < abs(other)
+        else:
+            return NotImplemented
+    
+    def __le__(self, other):
+        pass
+
+    def __gt__(self, other):
+        pass
+
+    def __ge__(self, other):
+        pass
+
+    def __ne__(self, other):
+        pass
+    
+p1, p2, p3 = Point(2,3), Point(2,3), Point(0,0)
+
+p1 is p2 # return False 
+p1==p2 # return True 
+
+p4 = Point(100,120)
+
+result = p2 < p4
+result = p2 > p4 # return False
+""" although we have not decalared the greater than method, what python does is check whether p4 < p2 and returns the result,
+Also, instead of difining a method for each case, we can built a decorator, which given a fact that we have created equal-to and less-than, 
+we can build the remaining""" 
+
+def complete_ordering(cls):
+    if "__eq__" in dir(cls) and "__lt__" in dir(cls):
+        cls.__le__ = lambda self, other: self < other or self == other
+        cls.__gt__ = lambda self, other: not(self < other) and not(self ==other)
+        cls.__ge__ = lambda self, other: not(self < other) or self==other
+        cls.__ne__ = lambda self, other: not(self==other)
+    return cls 
+
+@complete_ordering
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y 
+
+    def __abs__(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2)
+
+    def __repr__(self):
+        return "Point({}, {})".format(self.x , self.y)
+
+    def __eq__(self, other):
+        if isinstance(other, Point):
+            return self.x ==other.x and self.y == other.y
+        else:
+            return False
+
+    def __lt__(self, other):
+        if isinstance(other, Point):
+            return abs(self) < abs(other)
+        else:
+            return NotImplemented
+
+p1, p2, p3 = Point(2,3), Point(2,3), Point(0,0)
+
+p1 != p2 # return False
+p2 != p3 # return True
+p1 <= p3 # return False
+p1 >= p3 # return True
+
+#python provides a decorator for this too, for which we need to define atleast one of the [__lt__, __gt__] and __eq__ and it will define the rest 
+
+from functools import total_ordering
+
+@total_ordering
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y 
+
+    def __abs__(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2)
+
+    def __repr__(self):
+        return "Point({}, {})".format(self.x , self.y)
+
+    def __eq__(self, other):
+        if isinstance(other, Point):
+            return self.x ==other.x and self.y == other.y
+        else:
+            return False
+
+    def __lt__(self, other):
+        if isinstance(other, Point):
+            return abs(self) < abs(other)
+        else:
+            return NotImplemented
+
+p1, p2, p3, p4 = Point(2,3), Point(2,3), Point(0,0), Point(100,200)
+
+result = p1 != p2 # return False
+result = p2 != p3 # return True
+result = p1 <= p3 # return False
+result = p1 >= p3 # return True
+
+"""Decorators Application: Single Dispatch Generic functions"""
+from html import escape
 
 
 print(result)
