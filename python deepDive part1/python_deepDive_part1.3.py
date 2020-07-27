@@ -3,6 +3,7 @@ This module covers the following:
     1.Scopes --> Local, Global, nonlocal, Nested
     2. Closures  **very very important concept 
     3. Decorators 
+    4. building single_dispatch functions
 """
 
 # Global and Local scopes
@@ -1199,6 +1200,8 @@ result = htmlize([1,2,3]) #return <ul>
                                 # <li>2(<i>0x2</i>)</li>
                                 # <li>3(<i>0x3</i>)</li>
                                 # </ul>
+
+
 
 
 print(htmlize.registered_func) #return {<class 'object'>: <function htmlize at 0x000002EF76788D90>, <class 'int'>: <function html_int at 0x000002EF76790048>, <class 'list'>: <function html_sequence at 0x000002EF767900D0>, <class 'tuple'>: <function html_sequence at 0x000002EF767900D0>}
