@@ -1059,7 +1059,6 @@ p1 <= p3 # return False
 p1 >= p3 # return True
 
 #python provides a decorator for this too, for which we need to define atleast one of the [__lt__, __gt__] and __eq__ and it will define the rest 
-
 from functools import total_ordering
 
 @total_ordering
@@ -1096,5 +1095,111 @@ result = p1 >= p3 # return True
 """Decorators Application: Single Dispatch Generic functions"""
 from html import escape
 
+def html_escape(arg):
+    return escape(str(arg))
 
-print(result)
+def html_int(a):
+    return "{0}(<i>{1}</i>)".format(a, str(hex(a)))
+
+def html_real(a):
+    return '0:.2f'.format(round(a, 2))
+
+def html_str(s):
+    return html_escape(s).replace("\n", '<br/>\n')
+
+def html_list(l):
+    items = ('<li>{0}</li>'.format(htmlize(item)) for item in l)
+
+    return '<ul>\n' + '\n'.join(items) + '\n</ul>'
+
+def html_dict(d):
+    items = ('<li>{0}= {1}</li>'.format(k, htmlize(v)) for k, v in d.items())
+
+    return '<ul>\n' + '\n'.join(items) + '\n</ul>'
+
+from decimal import Decimal 
+
+def htmlize(arg):
+    if isinstance(arg, int):
+        return html_int(arg)
+
+    if isinstance(arg, float) or isinstance(arg, Decimal):
+        return html_real(arg)
+    
+    if isinstance(arg, str):
+        return html_str(arg)
+    
+    if isinstance(arg, list) or isinstance(arg, tuple):
+        return html_list(arg)
+
+    if isinstance(arg, dict):
+        return html_dict(arg)
+    else:
+        return html_escape(arg)
+
+
+result = htmlize(100) #return 100(<i>0x64</i>)
+result = htmlize([1,2,3]) # return    <ul>
+                                    # <li>1</li>
+                                    # <li>2</li>
+                                    # <li>3</li>
+                                    # </ul>
+
+result = htmlize(["python", (1,2,3), 100 ])  
+
+"""The problem here is everytime we want to add a new function, we will have to modify the htmlize as well"""
+#alternate method
+
+def single_dispatch(fn):
+    registry= {}
+
+    registry[object] = fn
+
+    def decorated(arg):
+        return registry.get(type(arg), registry[object])(arg)
+    
+    #to register a new function along with it's datatype into the  registry dictionary. 
+    def register(type_):
+        def inner(fn):
+            registry[type_] = fn
+            return fn
+        
+        return inner
+
+    decorated.register_func = register  #added "register_func", as an attribute to the decorated function which is linked to the register function. 
+    decorated.registered_func = registry
+    return decorated  
+
+@single_dispatch
+def htmlize(arg):
+    return escape(str(arg))
+
+result = htmlize("python") #return python
+
+#let's give it a integer type
+result = htmlize(100) #return 100
+# so now in order to add this to the htmlize : 
+
+@htmlize.register_func(int)
+def html_int(a):
+    return "{0}(<i>{1}</i>)".format(a, str(hex(a)))
+
+result = htmlize(100) #return 100(<i>0x64</i>)
+
+#similarly 
+@htmlize.register_func(tuple)
+@htmlize.register_func(list)
+def html_sequence(l):
+    items = ('<li>{0}</li>'.format(htmlize(item)) for item in l)
+    return '<ul>\n' + '\n'.join(items) + '\n</ul>'
+
+
+result = htmlize([1,2,3]) #return <ul>
+                                # <li>1(<i>0x1</i>)</li>
+                                # <li>2(<i>0x2</i>)</li>
+                                # <li>3(<i>0x3</i>)</li>
+                                # </ul>
+
+
+print(htmlize.registered_func) #return {<class 'object'>: <function htmlize at 0x000002EF76788D90>, <class 'int'>: <function html_int at 0x000002EF76790048>, <class 'list'>: <function html_sequence at 0x000002EF767900D0>, <class 'tuple'>: <function html_sequence at 0x000002EF767900D0>}
+# print(result)

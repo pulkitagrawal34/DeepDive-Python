@@ -2,8 +2,10 @@
 '''
 Content Covered in this module:
 1. Quick refresh of basics of Python 
-1. Python variable and Memory reference 
-2. Numeric Data Types 
+2. Python variable and Memory reference 
+3. Numeric Data Types 
+4. Tuples 
+
 '''
 
 # #try ...except...finally
@@ -197,11 +199,8 @@ f(10)
 #we can pass the value "10" like this as well 
 f_ = select_func(2)(10)  #this will pass the value 10 to the return function(cube/aquare) depending upon the func_id
 
-
 #PYHTON OPTIMIZATIONS :Interning
-
 #forcing a string to intern
-
 import sys 
 
 a = sys.intern("your text here")
@@ -618,4 +617,155 @@ s3 = "abc"
 
 #if we don't want None or an empty string
 s4 = s1 or s2 or s3
-# print(s4) returns "abc"
+# print(s4) #returns "abc"
+
+"""Named Tuples"""
+from collections import namedtuple # it is a class factory i.e it's a function which generate classes
+
+Point2D = namedtuple("Point2D", ["x", "y"]) # the fields cannot start with an underscore
+
+pt1 = Point2D(10, 20)
+
+pt1 #result Point2D(x=10, y=20), but it has all the properties of a tuples along with some additional properties
+
+pt2 = Point2D(10, 20)
+
+#property 1 : indexing and slicing namedtuples same as tuples 
+pt2[0] #return 10 
+pt2[1] #returns 20 
+
+#In case of namedtuples we can even do this: it's upto us how do we want to access the items
+result = pt2.x #returns 10 
+result = pt2.y #returns 20 
+
+pt2._fields #return ('x', 'y')
+
+#property 2: comparing two namedtuples same as tuples
+pt1 is pt2 #returns False  
+pt1 == pt2 #returns True # because namedtuple is inherited from tuple class 
+
+#property3
+result = max(pt1) #return 20 
+
+Circle = namedtuple("Circle", 'centre_x, centre_y radius')
+c = Circle(0, 0, 2)
+result = c.radius  #returns 2
+
+#property 4
+result = c._fields #returns ('centre_x', 'centre_y', 'radius')
+
+#property 5s
+result = c._asdict() #returns OrderedDict([('centre_x', 0), ('centre_y', 0), ('radius', 2)])
+
+"""Modifying a namedtuple"""
+Stock = namedtuple("Stock", 'symbol year month day open high low close')
+
+djia = Stock("DJIA", 2018, 1, 25, 26313, 26458, 26260, 26393)
+
+#lets say we want to replace the day, high and close property of the namedtuple stock
+#We cannot modify it directly using "djia.day = 26" because it's a tuple and tuples are immutable
+#namedtuple provide us with a _replace attribute which we can use to replace the values, but internally it creates a new instance with the new attributes.  
+djia = djia._replace(day = 26, high = 26459, close = 26393)
+djia #Stock(symbol='DJIA', year=2018, month=1, day=26, open=26313, high=26459, low=26260, close=26393)   
+
+"""Extending a namedtuple"""
+Stock = namedtuple("Stock", 'symbol year month day open high low close')
+
+#let's say we want to add a new field "previous close", here is how we can do it
+StockExt = namedtuple("StockExt", Stock._fields + ("previous_close", ))
+
+#extending values from existing object to extended object 
+djia = Stock("DJIA", 2018, 1, 25, 26313, 26458, 26260, 26393)
+djia_ext = StockExt(*djia, 26000)
+
+"""Docstring and Default values"""
+result = StockExt.__doc__ #returns StockExt(symbol, year, month, day, open, high, low, close, previous_close)
+
+#we can also call __doc__ on the parameters
+result = StockExt.symbol.__doc__ # returns Alias for field number 0
+# help(StockExt)
+
+#we can even reset these values 
+StockExt.__doc__ = "Contains stock market data"
+StockExt.symbol.__doc__ = "Name of the company"
+
+result = StockExt.__doc__ #return "Contains stock market data"
+
+"""Setting defaults"""
+#let's say we have this namedtuple
+Vector2D = namedtuple("Vector2D", "x1 y1 x2 y2 origin_x origin_y")
+
+# This named tuple accepts 6 arguments and let's say we want to keep origin_x and origin_y = 0 as default. 
+v1 = Vector2D(x1 = 0, y1 = 0, x2= 10, y2= 10, origin_x= 0, origin_y= 0)
+
+#Method1: The way we can do it is by using prototypes
+vector_zero = Vector2D(0, 0, 0, 0, 0, 0)
+
+#and now we can forget aboyt Vector2D and instead use vector_zero along with _replace method
+v2 = vector_zero._replace(x1 = 10, y1 = 10, x2 = 20, y2 = 20 ) 
+result = v2 # returns Vector2D(x1=10, y1=10, x2=20, y2=20, origin_x=0, origin_y=0)
+
+"""How it works with regular functions"""
+
+def func(a, b = 10, c = 20):
+    return a , b, c
+
+func(1) # return (1, 10, 20)
+result = func.__defaults__ # return (10, 20)
+
+"""This explains why we can't use a positional argument after using a keyword based argument, because these values are right aligned.
+a  b   c 
+  10  20
+"""
+
+# we can even change the defaults 
+func.__defaults__ = (100,200,300)
+result = func() # return (100, 200, 300)
+
+"""setting defaults to named tuples"""
+result = Vector2D.__new__.__defaults__ # returns None
+
+Vector2D.__new__.__defaults__ = (0,0)
+
+#now we need to specify only 4 arguments and it will work
+v1 = Vector2D(10,10,20,20)
+v1 #return Vector2D(x1=10, y1=10, x2=20, y2=20, origin_x=0, origin_y=0)
+
+"""application of namedtuple"""
+
+from random import randint, random
+from collections import namedtuple
+
+def random_color():
+    red = randint(0, 255)
+    blue = randint(0, 255)
+    green = randint(0, 255)
+    alpha = round(random(), 2)
+    return red, blue, green , alpha 
+
+color1 = random_color()
+
+#we can either do this
+red, blue, green, alpha = random_color()
+
+# or we can define a namedtuple and return that 
+Color = namedtuple("Color", "red blue green alpha")
+
+def random_color():
+    red = randint(0, 255)
+    blue = randint(0, 255)
+    green = randint(0, 255)
+    alpha = round(random(), 2)
+    return Color(red, blue, green , alpha )
+
+color2 = random_color()
+color2._fields # return ('red', 'blue', 'green', 'alpha')
+
+#and editors will be able to help us about the fields present in the object 
+color2.red
+color2.green
+color2.blue
+color2.alpha
+
+# print(color)
+
