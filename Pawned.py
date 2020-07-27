@@ -16,4 +16,5 @@ def check(pwd):
     return sha1pwd, count 
 
 
+
 print(check(sys.argv[1]))
