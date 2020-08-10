@@ -6,7 +6,12 @@ This module contains the following:
     1. Combinatorics in itertools module--> product, permutations, combinations, combinations_with_replacement
     2. Context managers: A state surrounding a section of code
     3. Generators and context managers: Creating a context manager from generator fucntions. 
-    4. Decorating Generator functions
+    4. Decorating Generator functions with context managers
+    5. Generators and co-routines
+        a. Generator State
+        b. Sending to Generators
+        3. closing generators
+
 Definitions: 
 Predicate: A function which takes a single argument and returns True or False
 """
@@ -263,7 +268,7 @@ class Timer:
         return False 
 
 with Timer() as timer:
-    sleep(1)
+    sleep(0.01)  # TODO
 
 timer.elapsed  #returns 1.0000387
 
@@ -469,5 +474,551 @@ opening file...
 closing file....
 """
 
-"""Decorating generator functions"""
+"""Decorating generator functions with context managers"""
+class GeneratorContextManager:
+    def __init__(self, gen_obj):
+        self._gen = gen_obj
 
+    def __enter__(self):
+        print("calling next to get the yielded value from the generator")
+        return next(self._gen)
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        print("calling next to perform cleanup in generator")
+        try: 
+            next(self._gen)
+        except StopIteration:
+            pass
+
+        return False 
+
+def contextManager_decorator(gen_func):
+    def helper(*args , **kwargs):
+        gen = gen_func(*args, **kwargs)
+        return GeneratorContextManager(gen)
+    return helper
+
+@contextManager_decorator
+def open_file(fname, mode = 'r'):  #equivalent to --> open_file = contextManager_decorator(open_file)
+
+    print("opening file...")
+    f = open(fname, mode)
+    try:
+        yield f 
+    finally:
+        print("closing file")
+        f.close()
+
+with open_file("test.text", "w") as f:
+    f.writelines("writing.....")
+
+#console log :
+"""
+calling next to get the yielded value from the generator
+opening file...
+calling next to perform cleanup in generator
+closing file
+"""
+with open_file("test.text", "r") as f:
+    print(f.readlines())
+
+#console log:
+"""
+calling next to get the yielded value from the generator
+opening file...
+['writing.....']
+calling next to perform cleanup in generator
+closing file
+"""
+
+#there is an inbuild context manager decorator in contextlib module, it has better inbuilt exception handling codes hance preferred
+from contextlib import contextmanager  
+
+@contextmanager
+def open_file(fname, mode = 'r'):
+
+    print("opening file...")
+    f = open(fname, mode)
+    try:
+        yield f 
+    finally:
+        print("closing file...")
+        f.close()
+
+with open_file("test.text", "w") as f:
+    f.writelines("writing.....")
+
+#console log :
+"""
+opening file...
+closing file...
+"""
+with open_file("test.text", "r") as f:
+    print(f.readlines())
+
+#console log:
+"""
+opening file...
+['writing.....']
+closing file...
+"""
+#Example 2: Timing an execution
+
+@contextmanager
+def timer():
+    stats = dict()
+    start = perf_counter()
+    stats["start"] = start 
+
+    try:
+        yield stats 
+    finally:
+        stop = perf_counter()
+        stats["stop"] = stop
+        stats["elapsed"] = stop - start 
+
+with timer() as stats:
+    sleep(0.01)  #TODO
+
+stats  # return {'start': 1.1521731, 'stop': 2.1524884, 'elapsed': 1.0003153000000002}
+
+#example 3 : redirecting the stdout location
+
+import sys 
+@contextmanager
+def out_to_file(fname):
+    current_stdout = sys.stdout 
+    file = open(fname, "w")
+    sys.stdout = file 
+    try:
+        yield
+    finally:
+        file.close()
+        sys.stdout = current_stdout 
+
+with out_to_file("test.text"):
+    print("Test statement 1", end = " ")
+    print("Test statement 2", end = " ")
+
+with open_file("test.text", "r") as f:
+    print(f.readlines())
+
+#console log:
+"""
+opening file...
+['Test statement 1 Test statement 2 ']
+closing file...
+"""
+
+#redirecting output is so common that python has an inbuilt context manager for that, but it doesn't accept a file name, but instead it takes file_object as an input
+from contextlib import redirect_stdout
+
+#Method 1 
+f = open("test.text", 'w')
+with redirect_stdout(f):
+        print("new log data...")
+f.close()
+
+with open_file("test.text", "r") as f:
+    print(f.readlines())    #returns ['new log data...\n']
+
+#Method 2 : use conetxt managers
+with open("test.text", "w") as f:
+    with redirect_stdout(f):
+        print("new log data...")
+
+with open_file("test.text", "r") as f:
+    f.readlines()    #returns ['new log data...\n']
+
+
+"""
+------------------------------
+Generators and coroutines
+------------------------------
+--> coroutines are actually co-operative routines(functions), which are coordinating between two events. 
+
+Extras:
+Abstract Data structures
+
+Stack: Last in first out
+    Sample Implementation :
+        stack = []
+        stack.append(element)
+        stack.pop()
+
+Queue : First in First out
+    Sample Implementation :
+        queue = []
+        queue.insert(0, element)
+        queue.pop()
+
+In case of Queue, the insertion process at index 0 is highly inefficient, hence w ecan use deque from the collections module. 
+"""
+
+print("---------------------------\n\n")
+
+from collections import deque
+
+dq = deque([1,2,3,4,5])
+
+#appending an element on the right side 
+dq.append(100)  
+dq  #returns deque([1, 2, 3, 4, 5, 100])
+
+#appending an element on the left side
+dq.appendleft(-10) 
+dq  #returns deque([-10, 1, 2, 3, 4, 5, 100])
+
+#removing the last element from the deque
+dq.pop()  #returns 100
+dq  #returns deque([-10, 1, 2, 3, 4, 5])
+
+#removing the first element from the deque 
+dq.popleft()  #returns -10
+dq  #returns deque([1, 2, 3, 4, 5])
+
+#deque has a maxlen property, which maintains the max length of the list and removes elements as shown below:
+dq = deque([1,2,3,4], maxlen = 5)
+len(dq) #returns 4
+dq.maxlen #returns 5
+
+dq.append(100)  
+dq #returns deque([1, 2, 3, 4, 100], maxlen=5)
+
+#Let's try to add a new element from the left
+dq.appendleft(0)
+dq  #returns deque([0, 1, 2, 3, 4], maxlen=5) -- > removed the right most element from the list
+
+#let's try to add an elemet from right again 
+dq.append(20)
+dq  #returns deque([1, 2, 3, 4, 20], maxlen=5)
+
+#Example 1: Building a producer, consumer and a co-ordinator of values.
+
+#producing sample elements
+def produce_elements(dq):
+    for i in range(1, 6):
+        dq.appendleft(i)
+
+#consuming elements produced by the producer
+def consume_elements(dq):
+    while len(dq) >0:
+        item = dq.pop()
+        print("processing item: ", item)
+
+#coordinating the events
+def coordinator():
+    dq = deque()
+    produce_elements(dq)
+    consume_elements(dq)
+
+coordinator()
+#console log:
+"""
+processing item:  1
+processing item:  2
+processing item:  3
+processing item:  4
+processing item:  5
+"""
+
+# let's say there are huge number of elements which the producer is producing, and hence we need to consume them as  batch processs as handling them at once would be 
+# too much consumption of memory and time.
+
+#producing sample elements but with an added condition to limit the number of elements at a time
+def produce_elements(dq, n):
+    for i in range(1, n):
+        dq.appendleft(i)
+        if len(dq) == dq.maxlen:  #this means that the queue is full
+            print("Queue Filled")
+            yield  #using the yield to give control to the consumer, and not to yield any value
+
+#consuming elements produced by the producer
+def consume_elements(dq):
+    while True:
+        while len(dq) > 0:
+            item = dq.pop()
+            print("processing item: ", item)
+        print("Queue empty - yielding control")
+        yield #again we are using yield to give the control back to the producer
+
+#coordinating the events
+def coordinator(max_length):
+
+    dq = deque(maxlen = max_length)
+    producer = produce_elements(dq, 100)
+    consumer = consume_elements(dq)
+
+    while True:
+        try:
+            print("producing...")
+            next(producer)
+        except StopIteration:
+            print("producer is finished...")
+            break
+        finally:
+            print("consuming...")
+            next(consumer)
+
+coordinator(20)
+
+"""
+---------------------
+Generator States
+---------------------
+def my_gen(fname):
+    f = open(f_name)
+    try:
+        for row in f:
+            yield row
+    finally:
+        f.close()
+
+4 states:
+    g = my_gen()  --> gen_creatd
+    row = next(g) --> gen_suspended 
+    lst(g)--> claling next until the generator is done --> gen_closed
+    inside the generator code --> gen_running
+"""
+from inspect import getgeneratorstate
+
+def gen(s):
+    for c in s:
+        yield c
+
+g = gen("abc")
+getgeneratorstate(g) #returns GEN_CREATED
+next(g) #returns "a"
+getgeneratorstate(g) # returns GEN_SUSPENDED
+list(g)  # genertaes rest of the characters -> ["b", "c"]
+getgeneratorstate(g) #returns GEN_CLOSED
+
+#in order to get the generator running state, we need to make an assumption about the instance of the function object which will get created in the global space
+def gen(s):
+    for c in s:
+        print(getgeneratorstate(global_gen)) # since this variable is not defined in the local scope, python is going to look for it in the global scope.
+        yield c
+
+global_gen = gen("abc")
+next(global_gen) # returns "a", console log: GEN_RUNNING
+getgeneratorstate(g) # returns GEN_SUSPENDED
+
+"""
+--------------------------
+Sending to generators
+--------------------------
+key points:
+1. yield when used like --> <var> = yield <var2- optional> works like an expression.
+2. In order to be able to send the data the generator function must be in suspended state. The generator is suspended right before "|yield"--> the pipe shows the locations where the generator gets suspended. 
+3. if the generator yields a finite value, then it will give an stopiteration error once it has been yielded that many times. 
+"""
+print("---------------------------\n\n")
+
+def echo():
+    while True:
+        received = yield 
+        print("you said:", received )
+
+e = echo()
+
+from inspect import getgeneratorstate
+getgeneratorstate(e) #returns GEN_CREATED
+#we cannot send any data right now, the generator is currently in created mode, we need ot bring in it to the suspended more before we can send something to it.
+
+next(e) #this process of bringing a generator from creation state to suspended state is called as priming
+getgeneratorstate(e) #returns GEN_SUSPENDED
+
+e.send("python") #console log: you said: python
+e.send("hello") #console log: you said: hello
+
+#we can send a value to any genertor object, for example
+def squares(n):
+    for i  in range(n):
+        yield i**2
+
+sq = squares(5) # creation mode
+#bring it to suspended mode
+next(sq) #returns 0
+sq.send("hello world") # returns 1 : because we didn't assign it to anything it was just discarded
+
+#way to bring a generator to it's suspended state from creation state
+def echo():
+    while True:
+        received = yield 
+        print("you said:", received )
+
+e = echo()
+#we are allowed to send a None object to just created generator, if we try to send anything else it will throw an error.
+e.send(None)
+getgeneratorstate(e)  #returns GEN_SUSPENDED
+e.send("hello world")  #console log : you said: hello world
+
+#we can even modify the square obejct to do both, reveice values and yield squares
+def squares(n):
+    for i  in range(n):
+        received = yield i**2
+        print("received:", received)
+
+sq = squares(5) # creation mode
+#bring it to suspended mode
+next(sq) #returns 0
+sq.send("python") 
+
+#console Log:
+"""
+----------------------------
+received: python 
+1
+-----------------------------
+Key points:
+1. Notice here that generator was in a suspended state, it first received the value, moved to the next line to print "received: python " and 
+then continued the loop and yielded 1.
+
+2. It's important to understand that the generator is suspended right before "|yield"--> the pipe shows the locations where the generator gets suspended. 
+"""
+
+#the generator will throw a stopIteration error once it has exhausted the loop, for example:
+def echo(max_len):
+    for _ in range(max_len):
+        received = yield
+        print("you said:", received)
+    print("that's all")
+
+e = echo(3)
+next(e)
+e.send("python")
+e.send("is")
+# e.send("awesome") #uncomment to see the stopiteration error
+
+#Console Log:
+"""
+you said: python
+you said: is
+you said: awesome
+that's all
+Traceback (most recent call last):
+  File "python_deepDive_part2.4.py", line 884, in <module>
+    e.send("awesome")
+StopIteration
+"""
+
+#Application 1: running averages 
+def running_averager():
+    total = 0 
+    count = 0 
+    average = None
+    while True:
+        received = yield average
+        total += received
+        count +=1
+        average = total/count
+
+def running_averages(iterable):
+    averager = running_averager()
+    next(averager)
+    for value in iterable:
+        running_average = averager.send(value)
+        print(running_average)
+
+running_averages((1,2,3,4))  #returns 1.0, 1.5, 2.0, 2.5
+
+
+"""
+--------------------
+Closing generators
+--------------------
+"""
+
+from inspect import getgeneratorstate
+
+import csv 
+
+def parse_file(f_name):
+    print("opening file..")
+    f = open(f_name, "r")
+    try:
+        dialect = csv.Sniffer().sniff(f.read(2000))
+        f.seek(0)
+        reader = csv.reader(f, dialect = dialect)
+        for row in reader:
+            yield row 
+    finally:
+        print("closing file...")
+        f.close()
+
+import itertools
+
+parser = parse_file("../Training Datasets/cars.csv")
+
+for row in itertools.islice(parser, 10):
+    print(row)
+
+#now let's say we only want to run these 10 lines and close the file, we can do this by:
+parser.close() #console log: "closing file..."
+#here is how it happened to see what is happening
+
+def parse_file(f_name):
+    print("opening file..")
+    f = open(f_name, "r")
+    try:
+        dialect = csv.Sniffer().sniff(f.read(2000))
+        f.seek(0)
+        reader = csv.reader(f, dialect = dialect)
+        for row in reader:
+            yield row 
+    except Exception as e:
+        print("some exception occured", str(e))
+    except GeneratorExit:
+        print("Generator was closed")
+    finally:
+        print("closing file...")
+        f.close()
+
+parser = parse_file("../Training Datasets/cars.csv")
+
+for row in itertools.islice(parser, 10):
+    print(row)
+
+parser.close()
+#console log:
+"""
+-----------------
+Generator was closed
+closing file...
+------------------
+key points:
+1. GeneratorExit is not a child class of Exception, so the exception isn't going to catch it.
+2. when we call the generator.close(), it raise the GeneratorExit exception insidee the generator. Hence it first prints the "generator was closed" and then finally part ran.
+3. We cannot ignore the GeneratorExit exception and continue running our code wew will  get an error.
+
+"""
+#trying to catch the exception and continue running the generator :
+def parse_file(f_name):
+    print("opening file..")
+    f = open(f_name, "r")
+    try:
+        dialect = csv.Sniffer().sniff(f.read(2000))
+        f.seek(0)
+        reader = csv.reader(f, dialect = dialect)
+        for row in reader:
+            try:
+                yield row 
+            except GeneratorExit:
+                print("Ignore the exception and continue running")
+    finally:
+        print("closing file...")
+        f.close()
+
+parser = parse_file("../Training Datasets/cars.csv")
+
+for row in itertools.islice(parser, 10):
+    print(row)
+
+# parser.close()# uncomment to see the below given error message
+"""
+Traceback (most recent call last):
+  File "python_deepDive_part2.4.py", line 1014, in <module>
+    parser.close()
+RuntimeError: generator ignored GeneratorExit
+Ignore the exception and continue running
+"""
